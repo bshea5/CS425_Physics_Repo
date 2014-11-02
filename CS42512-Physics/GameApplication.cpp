@@ -11,8 +11,9 @@ bLMouseDown(false),
 bRMouseDown(false)
 {
 	agent = NULL; // Init member data
-
+	launchVector = Ogre::Vector3(0, 20, -30);
 }
+
 //-------------------------------------------------------------------------------------
 GameApplication::~GameApplication(void)
 {
@@ -39,7 +40,7 @@ void GameApplication::createGUI(void)
 	// Lecture 16
 	if (mTrayMgr == NULL) return;
 	using namespace OgreBites;
-	Button* b = mTrayMgr->createButton(TL_TOPLEFT, "MyButton", "Click Me!", 120.0);
+	Button* b = mTrayMgr->createButton(TL_TOPLEFT, "MyButton", "Last position", 120.0);
 	b->show();
 
 	
@@ -50,10 +51,10 @@ void GameApplication::createGUI(void)
 
 	// Lecture 16: Setup parameter panel: Updated in addTime
 	Ogre::StringVector items;
-	items.push_back("Bob");
-	items.push_back("Sam");
-	items.push_back("George");
-	mParamsPanel = mTrayMgr->createParamsPanel(OgreBites::TL_TOP,"SamplePanel",250,items);
+	items.push_back("xVelocity");
+	items.push_back("yVelocity");
+	items.push_back("zVelocity");
+	mParamsPanel = mTrayMgr->createParamsPanel(OgreBites::TL_TOP,"Velocities",250,items);
 	
 	//mTrayMgr->create
 
@@ -149,7 +150,7 @@ GameApplication::loadEnv()
 		}
 	}
 
-	while  (buf != "Characters")	// get through any junk
+	while (buf != "Characters")	// get through any junk
 		inputfile >> buf;
 	
 	// Read in the characters
@@ -273,9 +274,9 @@ GameApplication::addTime(Ogre::Real deltaTime)
 
 
 	// Lecture 16: Panel Example 
-	mParamsPanel->setParamValue(0, Ogre::StringConverter::toString(deltaTime));
-	mParamsPanel->setParamValue(1, "Ok");
-	mParamsPanel->setParamValue(2, "Yuck");
+	mParamsPanel->setParamValue(0, Ogre::StringConverter::toString(launchVector[0]));
+	mParamsPanel->setParamValue(1, Ogre::StringConverter::toString(launchVector[1]));
+	mParamsPanel->setParamValue(2, Ogre::StringConverter::toString(launchVector[2]));
 }
 
 bool 
@@ -370,7 +371,33 @@ GameApplication::keyPressed( const OIS::KeyEvent &arg ) // Moved from BaseApplic
     }
 	else if (arg.key == OIS::KC_SPACE)
 	{
-		this->agent->fire(); // lecture 12
+		std::cout << "Fire! " << std::endl;
+		this->agent->fire(launchVector[0], launchVector[1], launchVector[2]); //get values from widget
+	}
+	//adjust input for initial velocities
+	//adjust z direction velocity
+	else if (arg.key == OIS::KC_EQUALS)
+	{
+		if (launchVector[2] < 0)
+		{
+			this->launchVector[2]++;
+		}
+	}
+	else if (arg.key == OIS::KC_MINUS)
+	{
+		this->launchVector[2]--;
+	}
+	//adjust y direction velocity
+	else if (arg.key == OIS::KC_RBRACKET)
+	{
+		this->launchVector[1]++;
+	}
+	else if (arg.key == OIS::KC_LBRACKET)
+	{
+		if (launchVector[1] > 0)
+		{
+			this->launchVector[1]--;
+		}
 	}
    
     mCameraMan->injectKeyDown(arg);
@@ -448,7 +475,6 @@ bool GameApplication::mousePressed( const OIS::MouseEvent &arg, OIS::MouseButton
 		mousePos.y = arg.state.Y.abs;
 		mousePos.z = arg.state.Z.abs;
 		
- 
 		//then send a raycast straight out from the camera at the mouse's position
 		Ogre::Ray mouseRay = mCamera->getCameraToViewportRay(mousePos.x/float(arg.state.width), mousePos.y/float(arg.state.height));
 		mRayScnQuery->setRay(mouseRay);
@@ -509,11 +535,14 @@ bool GameApplication::mouseReleased( const OIS::MouseEvent &arg, OIS::MouseButto
 ////////////////////////////////////////////////////////////////////
 // Lecture 16
 // Callback method for buttons
+// overrides a previous buttonHit function?
+// resets to default or last position before fired
 void GameApplication::buttonHit(OgreBites::Button* b)
 {
 	if (b->getName() == "MyButton")
 	{
 		std::cout << "Ouch that hurt!!!" << std::endl;	// Just a sample! This should alter the state of your code
+		agent->lastPosition();
 		return;
 	}
 }

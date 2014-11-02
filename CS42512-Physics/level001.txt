@@ -3,13 +3,15 @@ Examples/WaterStream
 
 Objects
 k knot.mesh 1.7 0.0 0.02
+d drum.mesh 1.7 0.0 0.10
 
 Characters
-m mannequin.mesh 0.0 0.75
+f fish.mesh 0.0 0.75
 
 World
 koooooooooooooo
 ooooooooooooooo
+oooooodoooooooo
 ooooooooooooooo
 ooooooooooooooo
 ooooooooooooooo
@@ -25,7 +27,6 @@ ooooooooooooooo
 ooooooooooooooo
 ooooooooooooooo
 ooooooooooooooo
-ooooooooooooooo
-oooooomoooooooo
+oooooofoooooooo
 ooooooooooooooo
 

@@ -9,6 +9,7 @@ class GameApplication : public BaseApplication
 private:
 	Agent* agent; // store a pointer to the character
 	std::list<Agent*> agentList; // Lecture 5: now a list of agents
+	Ogre::Vector3 launchVector;
 public:
     GameApplication(void);
     virtual ~GameApplication(void);
@@ -37,7 +38,6 @@ public:
 	bool bLMouseDown, bRMouseDown;		//true if mouse buttons are held down
 	Ogre::SceneNode *mCurrentObject;	//pointer to our currently selected object
 	/////////////////////////////////////////////////////////////////////////////////
-
 
 protected:
     virtual void createScene(void);
