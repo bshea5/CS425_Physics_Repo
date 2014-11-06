@@ -29,6 +29,7 @@ Agent::Agent(Ogre::SceneManager* SceneManager, std::string name, std::string fil
 	//mBodyNode->attachObject(msg);
 
 	projectile = false; // lecture 12
+	mass = 1.0;
 	ParticleSystem::setDefaultNonVisibleUpdateTimeout(5);  // set nonvisible timeout
 	ps = mSceneMgr->createParticleSystem("Fountain1", "Examples/PurpleFountain");
 	Ogre::SceneNode* mnode = mBodyNode->createChildSceneNode();
@@ -84,7 +85,7 @@ Agent::updateLocomote(Ogre::Real deltaTime)
 //////////////////////////////////////////////////////////////////
 //intializes the initial velocities and toggles the agent to shoot
 void
-Agent::fire(Ogre::Real vx, Ogre::Real vy, Ogre::Real vz) // lecture 12
+Agent::fire(Ogre::Real vx, Ogre::Real vy, Ogre::Real vz, Ogre::Real speed)
 {
 	projectile = true; // turns on the movement, which will call shoot
 
@@ -95,7 +96,7 @@ Agent::fire(Ogre::Real vx, Ogre::Real vy, Ogre::Real vz) // lecture 12
 	vel.z = vz;
 	gravity.x = 0;
 	gravity.y = -9.81;
-	gravity.z = 0;
+	gravity.z = -speed;	// bit of a hack, but should create the illusion
 	ps->setVisible(true);
 	this->mBodyNode->yaw(Ogre::Degree(180));
 	this->mBodyNode->pitch(Ogre::Degree(45));
@@ -124,13 +125,17 @@ Agent::shoot(Ogre::Real deltaTime) // lecture 12 call for every frame of the ani
 
 	if (this->mBodyNode->getPosition().y <= -0.5) // if it get close to the ground, stop
 	{
-		// when finished reset
-		projectile = false;
-		ps->setVisible(false);
-		this->mBodyNode->pitch(Ogre::Degree(-45));
-		this->mBodyNode->yaw(Ogre::Degree(180));
+		reload();	// finished reset
 	}
 	//need another condition for colliding
 }
 
-
+void
+Agent::reload()
+{
+	projectile = false;
+	ps->setVisible(false);
+	this->mBodyNode->pitch(Ogre::Degree(-45));
+	this->mBodyNode->yaw(Ogre::Degree(180));
+	this->mBodyNode->setPosition(initPos);
+}

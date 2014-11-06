@@ -9,7 +9,9 @@ class GameApplication : public BaseApplication
 private:
 	Agent* agent; // store a pointer to the character
 	std::list<Agent*> agentList; // Lecture 5: now a list of agents
-	Ogre::Vector3 launchVector;
+	Ogre::Vector3 launchVector;	// determines trajectory
+	Ogre::Real speed;	//speed of agent shot
+	int shots_fired;	//number of fish fired
 public:
     GameApplication(void);
     virtual ~GameApplication(void);

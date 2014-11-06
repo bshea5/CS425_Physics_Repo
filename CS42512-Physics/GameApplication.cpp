@@ -12,6 +12,8 @@ bRMouseDown(false)
 {
 	agent = NULL; // Init member data
 	launchVector = Ogre::Vector3(0, 20, -30);
+	speed = 1;
+	shots_fired = 0;
 }
 
 //-------------------------------------------------------------------------------------
@@ -54,6 +56,7 @@ void GameApplication::createGUI(void)
 	items.push_back("xVelocity");
 	items.push_back("yVelocity");
 	items.push_back("zVelocity");
+	items.push_back("Speed");
 	mParamsPanel = mTrayMgr->createParamsPanel(OgreBites::TL_TOP,"Velocities",250,items);
 	
 	//mTrayMgr->create
@@ -272,11 +275,11 @@ GameApplication::addTime(Ogre::Real deltaTime)
 		if (*iter != NULL)
 			(*iter)->update(deltaTime);
 
-
 	// Lecture 16: Panel Example 
 	mParamsPanel->setParamValue(0, Ogre::StringConverter::toString(launchVector[0]));
 	mParamsPanel->setParamValue(1, Ogre::StringConverter::toString(launchVector[1]));
 	mParamsPanel->setParamValue(2, Ogre::StringConverter::toString(launchVector[2]));
+	mParamsPanel->setParamValue(3, Ogre::StringConverter::toString(speed));
 }
 
 bool 
@@ -371,8 +374,12 @@ GameApplication::keyPressed( const OIS::KeyEvent &arg ) // Moved from BaseApplic
     }
 	else if (arg.key == OIS::KC_SPACE)
 	{
-		std::cout << "Fire! " << std::endl;
-		this->agent->fire(launchVector[0], launchVector[1], launchVector[2]); //get values from widget
+		if (shots_fired < 20) //limit the number of shots per game to 20
+		{
+			std::cout << "Fire! " << std::endl;
+			this->agent->fire(launchVector[0], launchVector[1], launchVector[2], speed); 
+			shots_fired++;
+		}
 	}
 	//adjust input for initial velocities
 	//adjust z direction velocity
@@ -398,6 +405,15 @@ GameApplication::keyPressed( const OIS::KeyEvent &arg ) // Moved from BaseApplic
 		{
 			this->launchVector[1]--;
 		}
+	}
+	//adjust speed
+	else if (arg.key == OIS::KC_9)
+	{
+		if (speed > 0) { this->speed--; }
+	}
+	else if (arg.key == OIS::KC_0)
+	{
+		if (speed < 10) { this->speed++; }
 	}
    
     mCameraMan->injectKeyDown(arg);
@@ -542,7 +558,7 @@ void GameApplication::buttonHit(OgreBites::Button* b)
 	if (b->getName() == "MyButton")
 	{
 		std::cout << "Ouch that hurt!!!" << std::endl;	// Just a sample! This should alter the state of your code
-		agent->lastPosition();
+		agent->reload();
 		return;
 	}
 }
