@@ -41,7 +41,8 @@ Agent::Agent(Ogre::SceneManager* SceneManager, std::string name, std::string fil
 	mWalkSpeed = 35.0f;	
 	mDirection = Ogre::Vector3::ZERO;
 
-	initPos = Ogre::Vector3::ZERO;	//default position if none given
+	//initPos = Ogre::Vector3::ZERO;	//default position if none given
+	initPos = this->mBodyNode->getPosition();	//save starting position
 }
 
 Agent::~Agent(){
@@ -53,6 +54,7 @@ void
 Agent::setPosition(float x, float y, float z)
 {
 	this->mBodyNode->setPosition(x, y + height, z);
+	initPos = mBodyNode->getPosition();	//save this position for shooting
 }
 
 void
@@ -88,9 +90,8 @@ void
 Agent::fire(Ogre::Real vx, Ogre::Real vy, Ogre::Real vz, Ogre::Real speed)
 {
 	projectile = true; // turns on the movement, which will call shoot
-
+	//initPos = mBodyNode->getPosition();	//start of the shot
 	// set up the initial state
-	initPos = this->mBodyNode->getPosition();
 	vel.x = vx;
 	vel.y = vy;
 	vel.z = vz;
@@ -121,13 +122,15 @@ Agent::shoot(Ogre::Real deltaTime) // lecture 12 call for every frame of the ani
 	this->mBodyNode->setPosition(pos);
 
 	Ogre::AxisAlignedBox objBox = this->mBodyEntity->getWorldBoundingBox();
-	objBox.intersects(objBox); 
+	objBox.intersects(objBox);
+
+	//check for collision here? or in the GameApp?
+	// ???
 
 	if (this->mBodyNode->getPosition().y <= -0.5) // if it get close to the ground, stop
 	{
 		reload();	// finished reset
 	}
-	//need another condition for colliding
 }
 
 void
@@ -138,4 +141,15 @@ Agent::reload()
 	this->mBodyNode->pitch(Ogre::Degree(-45));
 	this->mBodyNode->yaw(Ogre::Degree(180));
 	this->mBodyNode->setPosition(initPos);
+}
+
+bool
+Agent::intersects(Ogre::Entity* e)
+{
+	if (e == NULL) { return false; }
+
+	Ogre::AxisAlignedBox mBox = mBodyEntity->getWorldBoundingBox();
+	Ogre::AxisAlignedBox eBox = e->getWorldBoundingBox();
+
+	return mBox.intersects(eBox);
 }

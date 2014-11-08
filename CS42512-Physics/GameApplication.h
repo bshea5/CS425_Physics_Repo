@@ -7,11 +7,13 @@
 class GameApplication : public BaseApplication
 {
 private:
-	Agent* agent; // store a pointer to the character
+	Agent* agent;			// store a pointer to the character
+	Ogre::Entity* target;	//pointer to target barrel
 	std::list<Agent*> agentList; // Lecture 5: now a list of agents
 	Ogre::Vector3 launchVector;	// determines trajectory
 	Ogre::Real speed;	//speed of agent shot
 	int shots_fired;	//number of fish fired
+	int score;			//score from hitting barrels with fish
 public:
     GameApplication(void);
     virtual ~GameApplication(void);
@@ -44,10 +46,13 @@ public:
 protected:
     virtual void createScene(void);
 
-	virtual void createGUI(void); // Lecture 16
+	virtual void createGUI(void); // generates gui 
     virtual void buttonHit(OgreBites::Button* b); // Lecture 16
+	virtual void okDialogClosed(const Ogre::DisplayString& message);
 	virtual void sliderMoved(OgreBites::Slider* s); // Lecture 16
-	OgreBites::ParamsPanel* mParamsPanel; // Lecture 16
+	OgreBites::ParamsPanel* mParamsPanel;	//display vectors and speed
+	OgreBites::ParamsPanel* mScorePanel;	//display score and shots fired
+	 //mEndScore;		//display game over and final score
 };
 
 #endif // #ifndef __TutorialApplication_h_

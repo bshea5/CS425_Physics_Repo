@@ -69,6 +69,7 @@ public:
 	
 	void printToFile();				// Print a grid to a file.  Good for debugging
 	void loadObject(std::string name, std::string filename, int row, int height, int col, float scale = 1); // load and place a model in a certain location.
+	void moveEntity(GridNode* source, GridNode* target);	//move entity to gridnode n
 	Ogre::Vector3 getPosition(int r, int c);	// return the position  
 };
 

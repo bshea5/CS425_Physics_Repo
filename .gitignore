@@ -14,6 +14,9 @@ $RECYCLE.BIN/
 *.msm
 *.msp
 
+# ignore large sdf files
+*.sdf
+
 # =========================
 # Operating System Files
 # =========================

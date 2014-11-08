@@ -41,11 +41,12 @@ public:
 	// lecture 12: launches the character
 	// adjust velocity with parameters
 	void fire(Ogre::Real vx, Ogre::Real vy, Ogre::Real vz, Ogre::Real speed);
-
 	void reload();							// halts all agent movement and resets
+	
 	void setPosition(float x, float y, float z);
 	void lastPosition();
 
+	bool intersects(Ogre::Entity* e);		//intersects with an entity e
 	void update(Ogre::Real deltaTime);		// update the agent
 
 	

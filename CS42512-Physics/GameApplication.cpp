@@ -11,9 +11,11 @@ bLMouseDown(false),
 bRMouseDown(false)
 {
 	agent = NULL; // Init member data
+	target = NULL;
 	launchVector = Ogre::Vector3(0, 20, -30);
 	speed = 1;
 	shots_fired = 0;
+	score = 0;
 }
 
 //-------------------------------------------------------------------------------------
@@ -57,7 +59,13 @@ void GameApplication::createGUI(void)
 	items.push_back("yVelocity");
 	items.push_back("zVelocity");
 	items.push_back("Speed");
-	mParamsPanel = mTrayMgr->createParamsPanel(OgreBites::TL_TOP,"Velocities",250,items);
+	mParamsPanel = mTrayMgr->createParamsPanel(OgreBites::TL_BOTTOM,"Velocities",250,items);
+
+	// score panel with number of shots fired
+	items.clear();
+	items.push_back("Score");
+	items.push_back("Shots fired");
+	mScorePanel = mTrayMgr->createParamsPanel(OgreBites::TL_TOP, "Stats", 250, items);
 	
 	//mTrayMgr->create
 
@@ -189,6 +197,10 @@ GameApplication::loadEnv()
 				else	// Load objects
 				{
 					grid.loadObject(getNewName(), rent->filename, i, rent->y, j, rent->scale);
+					if (c == 'd') //object is the target drum
+					{
+						target = grid.getNode(i,j)->entity;
+					}
 				}
 			else // not an object or agent
 			{
@@ -269,17 +281,37 @@ GameApplication::loadCharacters()
 void
 GameApplication::addTime(Ogre::Real deltaTime)
 {
+	if (shots_fired >= 20)
+	{ // end game and give the option to reset game
+		Ogre::String uScored = "Score: ";
+		uScored +=  Ogre::StringConverter::toString(score);
+		mTrayMgr->showOkDialog("Game Over!", uScored);
+	}
+
 	// Lecture 5: Iterate over the list of agents
 	std::list<Agent*>::iterator iter;
 	for (iter = agentList.begin(); iter != agentList.end(); iter++)
 		if (*iter != NULL)
 			(*iter)->update(deltaTime);
 
-	// Lecture 16: Panel Example 
+	//or check for collision here since there is a pointer to both the agent 
+	//and the target in the GameApp
+	if (target != NULL && agent->intersects(target))
+	{
+		std::cout << "hit! " << std::endl;
+		agent->reload();
+		score++;
+	}
+
+	// Velocity Panel
 	mParamsPanel->setParamValue(0, Ogre::StringConverter::toString(launchVector[0]));
 	mParamsPanel->setParamValue(1, Ogre::StringConverter::toString(launchVector[1]));
 	mParamsPanel->setParamValue(2, Ogre::StringConverter::toString(launchVector[2]));
 	mParamsPanel->setParamValue(3, Ogre::StringConverter::toString(speed));
+
+	// Score Panel
+	mScorePanel->setParamValue(0, Ogre::StringConverter::toString(score));
+	mScorePanel->setParamValue(1, Ogre::StringConverter::toString(shots_fired));
 }
 
 bool 
@@ -376,7 +408,6 @@ GameApplication::keyPressed( const OIS::KeyEvent &arg ) // Moved from BaseApplic
 	{
 		if (shots_fired < 20) //limit the number of shots per game to 20
 		{
-			std::cout << "Fire! " << std::endl;
 			this->agent->fire(launchVector[0], launchVector[1], launchVector[2], speed); 
 			shots_fired++;
 		}
@@ -562,6 +593,16 @@ void GameApplication::buttonHit(OgreBites::Button* b)
 		return;
 	}
 }
+
+void 
+GameApplication::okDialogClosed(const Ogre::DisplayString& message)
+{
+	score = 0;
+	shots_fired = 0;
+	agent->reload();
+	mTrayMgr->closeDialog();
+}
+
 ////////////////////////////////////////////////////////////////////
 // Lecture 16
 // Callback method for sliders

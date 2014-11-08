@@ -256,6 +256,22 @@ Grid::loadObject(std::string name, std::string filename, int row, int height, in
 	gn->entity = ent;
 }
 
+//////////////////////////////////////////////////////////////////////////////
+// replace the target's entity with the sources entity
+// and move it to the new node space
+void 
+Grid::moveEntity(GridNode* source, GridNode* target)
+{
+	if (source->entity == NULL) { return; }
+	if (target->entity != NULL) { return; }
+	//move entity to target node's position
+	source->entity->getParentNode()->setPosition(target->getPosition(nRows, nCols));
+	//assign it at target node
+	target->entity = source->entity;
+	//remove from current node
+	source->entity = NULL;
+}
+
 ////////////////////////////////////////////////////////////////////////////
 // Added this method and changed GridNode version to account for varying floor 
 // plane dimensions. Assumes each grid is centered at the origin.
