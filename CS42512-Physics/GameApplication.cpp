@@ -16,6 +16,7 @@ bRMouseDown(false)
 	speed = 1;
 	shots_fired = 0;
 	score = 0;
+	number_targets = 0;
 }
 
 //-------------------------------------------------------------------------------------
@@ -40,38 +41,48 @@ void GameApplication::createScene(void)
 
 void GameApplication::createGUI(void)
 {
-	//////////////////////////////////////////////////////////////////////////////////
-	// Lecture 16
 	if (mTrayMgr == NULL) return;
 	using namespace OgreBites;
-	Button* b = mTrayMgr->createButton(TL_TOPLEFT, "MyButton", "Last position", 120.0);
+	Button* b = mTrayMgr->createButton(TL_TOPRIGHT, "MyButton", "Last position", 120.0);
 	b->show();
 
-	
-	Slider* mSampleSlider = mTrayMgr->createThickSlider(TL_TOPRIGHT, "SampleSlider", "Slide Samples", 250, 80, 0, 0, 0);
-	mSampleSlider->setRange(0,100,5);
-	mSampleSlider->setValue(50);
-	mTrayMgr->sliderMoved(mSampleSlider);
+	//sliders to control velocities and speed
+	Slider* xVelocitySlider = mTrayMgr->createThickSlider(TL_BOTTOMRIGHT, "xVelocitySlider", "X Velocity", 250, 80, 0, 0, 0);
+	xVelocitySlider->setRange(-10,10,21);
+	xVelocitySlider->setValue(0);
+	mTrayMgr->sliderMoved(xVelocitySlider);
+
+	Slider* zVelocitySlider = mTrayMgr->createThickSlider(TL_BOTTOMRIGHT, "zVelocitySlider", "Z Velocity", 250, 80, 0, 0, 0);
+	zVelocitySlider->setRange(-20,0,21);
+	zVelocitySlider->setValue(-10);
+	mTrayMgr->sliderMoved(zVelocitySlider);
+
+	Slider* yVelocitySlider = mTrayMgr->createThickSlider(TL_BOTTOMRIGHT, "yVelocitySlider", "Y Velocity", 250, 80, 0, 0, 0);
+	yVelocitySlider->setRange(0,15,16);
+	yVelocitySlider->setValue(10);
+	mTrayMgr->sliderMoved(yVelocitySlider);
+
+	Slider* speedSlider= mTrayMgr->createThickSlider(TL_BOTTOMRIGHT, "speedSlider", "Speeeed", 250, 80, 0, 0, 0);
+	speedSlider->setRange(0,10,11);
+	speedSlider->setValue(5);
+	mTrayMgr->sliderMoved(speedSlider);
 
 	// Lecture 16: Setup parameter panel: Updated in addTime
 	Ogre::StringVector items;
-	items.push_back("xVelocity");
-	items.push_back("yVelocity");
-	items.push_back("zVelocity");
-	items.push_back("Speed");
-	mParamsPanel = mTrayMgr->createParamsPanel(OgreBites::TL_BOTTOM,"Velocities",250,items);
+	items.push_back("V:");
+	mParamsPanel = mTrayMgr->createParamsPanel(OgreBites::TL_BOTTOMLEFT,"Trajectory Velocity",250,items);
+	mParamsPanel->setParamValue(0, Ogre::StringConverter::toString(Ogre::Vector3::ZERO));
 
 	// score panel with number of shots fired
 	items.clear();
 	items.push_back("Score");
 	items.push_back("Shots fired");
+	items.push_back("Targets remaining");
 	mScorePanel = mTrayMgr->createParamsPanel(OgreBites::TL_TOP, "Stats", 250, items);
 	
 	//mTrayMgr->create
-
 	mTrayMgr->showAll();
 
-	//////////////////////////////////////////////////////////////////////////////////
 }
 //////////////////////////////////////////////////////////////////
 // Lecture 5: Returns a unique name for loaded objects and agents
@@ -134,8 +145,8 @@ GameApplication::loadEnv()
 	floor->setCastShadows(false);
 	mSceneMgr->getRootSceneNode()->attachObject(floor);
 
-	Grid grid(mSceneMgr, z, x); // Set up the grid. z is rows, x is columns
-	
+	this->grid = new Grid(mSceneMgr, z, x); // Set up the grid
+
 	string buf;
 	inputfile >> buf;	// Start looking for the Objects section
 	while  (buf != "Objects")
@@ -192,14 +203,16 @@ GameApplication::loadEnv()
 					// Use subclasses instead!
 					agent = new Agent(this->mSceneMgr, getNewName(), rent->filename, rent->y, rent->scale);
 					agentList.push_back(agent);
-					agent->setPosition(grid.getPosition(i,j).x, 0, grid.getPosition(i,j).z);
+					agent->setPosition(grid->getPosition(i,j).x, 0, grid->getPosition(i,j).z);
 				}
 				else	// Load objects
 				{
-					grid.loadObject(getNewName(), rent->filename, i, rent->y, j, rent->scale);
+					grid->loadObject(getNewName(), rent->filename, i, rent->y, j, rent->scale);
 					if (c == 'd') //object is the target drum
 					{
-						target = grid.getNode(i,j)->entity;
+						target = grid->getNode(i,j)->entity;
+						target->setVisible(false);		//hide barrels!
+						targetList.push_back(target);	
 					}
 				}
 			else // not an object or agent
@@ -211,8 +224,8 @@ GameApplication::loadEnv()
 					Ogre::SceneNode* mNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
 					mNode->attachObject(ent);
 					mNode->scale(0.1f,0.2f,0.1f); // cube is 100 x 100
-					grid.getNode(i,j)->setOccupied();  // indicate that agents can't pass through
-					mNode->setPosition(grid.getPosition(i,j).x, 10.0f, grid.getPosition(i,j).z);
+					grid->getNode(i,j)->setOccupied();  // indicate that agents can't pass through
+					mNode->setPosition(grid->getPosition(i,j).x, 10.0f, grid->getPosition(i,j).z);
 				}
 				else if (c == 'e')
 				{
@@ -220,11 +233,14 @@ GameApplication::loadEnv()
 					ParticleSystem* ps = mSceneMgr->createParticleSystem(getNewName(), "Examples/PurpleFountain");
 					Ogre::SceneNode* mNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
 					mNode->attachObject(ps);
-					mNode->setPosition(grid.getPosition(i,j).x, 0.0f, grid.getPosition(i,j).z);
+					mNode->setPosition(grid->getPosition(i,j).x, 0.0f, grid->getPosition(i,j).z);
 				}
 			}
 		}
 	
+	target->setVisible(true); //toggle last target scanned in visible
+	number_targets = targetList.size();
+
 	// delete all of the readEntities in the objs map
 	rent = objs["s"]; // just so we can see what is going on in memory (delete this later)
 	
@@ -236,7 +252,7 @@ GameApplication::loadEnv()
 	objs.clear(); // calls their destructors if there are any. (not good enough)
 	
 	inputfile.close();
-	grid.printToFile(); // see what the initial grid looks like.
+	grid->printToFile(); // see what the initial grid looks like.
 }
 
 void // Set up lights, shadows, etc
@@ -252,6 +268,7 @@ GameApplication::setupEnv()
 
 	// disable default camera control so the character can do its own 
 	mCameraMan->setStyle(OgreBites::CS_FREELOOK); // CS_FREELOOK, CS_ORBIT, CS_MANUAL
+	mCamera->setPosition(-9, 6.9, 100.5);
 
 	// use small amount of ambient lighting
 	mSceneMgr->setAmbientLight(ColourValue(0.3f, 0.3f, 0.3f));
@@ -279,20 +296,32 @@ GameApplication::loadCharacters()
 }
 
 void
+GameApplication::resetGame()
+{
+	// reset fish and game states
+	score = 0;
+	shots_fired = 0;
+	agent->reload();
+
+	// reset targets
+	target->setVisible(false);
+	number_targets = targetList.size();
+	target = targetList[number_targets-1];
+	target->setVisible(true);
+}
+
+void
 GameApplication::addTime(Ogre::Real deltaTime)
 {
-	if (shots_fired >= 20)
+	if (shots_fired >= MAXSHOTS)
 	{ // end game and give the option to reset game
-		Ogre::String uScored = "Score: ";
+		Ogre::String uScored = "Hit 'OK' to restart.\nScore: ";
 		uScored +=  Ogre::StringConverter::toString(score);
 		mTrayMgr->showOkDialog("Game Over!", uScored);
 	}
 
-	// Lecture 5: Iterate over the list of agents
-	std::list<Agent*>::iterator iter;
-	for (iter = agentList.begin(); iter != agentList.end(); iter++)
-		if (*iter != NULL)
-			(*iter)->update(deltaTime);
+	//update agent, aka the fish
+	agent->update(deltaTime);
 
 	//or check for collision here since there is a pointer to both the agent 
 	//and the target in the GameApp
@@ -300,18 +329,34 @@ GameApplication::addTime(Ogre::Real deltaTime)
 	{
 		std::cout << "hit! " << std::endl;
 		agent->reload();
-		score++;
+		score = score + 100/shots_fired;	//rewards are higher for those that get it done
+											//in less shots
+		//lets rotate the barrel too on collision!
+		//setting invisible for now
+		target->setVisible(false);
+
+		//load new barrel as target
+		number_targets--;
+		if (number_targets < 1) //no more targets, toggle menu and reset game
+		{
+			Ogre::String uScored = "Hit 'OK' to restart.\nScore: ";
+			uScored +=  Ogre::StringConverter::toString(score);
+			mTrayMgr->showOkDialog("You Win!", uScored);
+		}
+		else //more targets to hit!
+		{
+			target = targetList[number_targets-1];
+			target->setVisible(true);
+		}
 	}
 
-	// Velocity Panel
-	mParamsPanel->setParamValue(0, Ogre::StringConverter::toString(launchVector[0]));
-	mParamsPanel->setParamValue(1, Ogre::StringConverter::toString(launchVector[1]));
-	mParamsPanel->setParamValue(2, Ogre::StringConverter::toString(launchVector[2]));
-	mParamsPanel->setParamValue(3, Ogre::StringConverter::toString(speed));
+	// Velocity Panel 
+	mParamsPanel->setParamValue(0, Ogre::StringConverter::toString(agent->getVelocity()));
 
 	// Score Panel
 	mScorePanel->setParamValue(0, Ogre::StringConverter::toString(score));
 	mScorePanel->setParamValue(1, Ogre::StringConverter::toString(shots_fired));
+	mScorePanel->setParamValue(2, Ogre::StringConverter::toString(number_targets));
 }
 
 bool 
@@ -406,7 +451,7 @@ GameApplication::keyPressed( const OIS::KeyEvent &arg ) // Moved from BaseApplic
     }
 	else if (arg.key == OIS::KC_SPACE)
 	{
-		if (shots_fired < 20) //limit the number of shots per game to 20
+		if (shots_fired < MAXSHOTS) //limit the number of shots per game to 20
 		{
 			this->agent->fire(launchVector[0], launchVector[1], launchVector[2], speed); 
 			shots_fired++;
@@ -588,18 +633,17 @@ void GameApplication::buttonHit(OgreBites::Button* b)
 {
 	if (b->getName() == "MyButton")
 	{
-		std::cout << "Ouch that hurt!!!" << std::endl;	// Just a sample! This should alter the state of your code
+		std::cout << "reload!" << std::endl;
 		agent->reload();
-		return;
 	}
 }
 
+////////////////////////////////////////////////////////////////////
+// Callback for the Game Over menu's OK button to reset game
 void 
 GameApplication::okDialogClosed(const Ogre::DisplayString& message)
 {
-	score = 0;
-	shots_fired = 0;
-	agent->reload();
+	this->resetGame();
 	mTrayMgr->closeDialog();
 }
 
@@ -608,10 +652,23 @@ GameApplication::okDialogClosed(const Ogre::DisplayString& message)
 // Callback method for sliders
 void GameApplication::sliderMoved(OgreBites::Slider* s)
 {
-	if (s->getName()=="SampleSlider")
+	//check which slider was used and use its value to change an element
+	if (s->getName()=="xVelocitySlider")
 	{
-		std::cout << "I'm a slider and my value is " << s->getValue() << std::endl; // Just a sample! This should alter the state of your code
-		return;
+		launchVector[0] = s->getValue();	//changes direction to be more left or right'ish
+		agent->setOrientation(260 - (s->getValue()*2));	//adjust direction fish is facing
+														//multiply by 2 to extragerate the turn more
 	}
-
+	else if (s->getName()=="yVelocitySlider")
+	{
+		launchVector[1] = s->getValue();	//shoots fish higher up
+	}
+	else if (s->getName()=="zVelocitySlider")
+	{
+		launchVector[2] = s->getValue();	//shoots fish farther
+	}
+	else if (s->getName()=="speedSlider")
+	{
+		speed = s->getValue();				//speed of the fish
+	}
 }

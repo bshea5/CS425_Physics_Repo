@@ -37,12 +37,9 @@ Agent::Agent(Ogre::SceneManager* SceneManager, std::string name, std::string fil
 	mnode->attachObject(ps);
 	ps->setVisible(false);
 
-	// configure walking parameters
-	mWalkSpeed = 35.0f;	
-	mDirection = Ogre::Vector3::ZERO;
-
 	//initPos = Ogre::Vector3::ZERO;	//default position if none given
 	initPos = this->mBodyNode->getPosition();	//save starting position
+	vel = Ogre::Vector3::ZERO;
 }
 
 Agent::~Agent(){
@@ -57,31 +54,13 @@ Agent::setPosition(float x, float y, float z)
 	initPos = mBodyNode->getPosition();	//save this position for shooting
 }
 
+//////////////////////////////////////////////////////////////////
+// adjust the fish to face where it is about to be shot
 void
-Agent::lastPosition()
+Agent::setOrientation(Ogre::Real r)
 {
-	setPosition(initPos[0], initPos[1], initPos[2]);
-}
-
-// update is called at every frame from GameApplication::addTime
-void
-Agent::update(Ogre::Real deltaTime) 
-{
-	if (projectile) // Lecture 12
-		shoot(deltaTime);
-	else
-		this->updateLocomote(deltaTime);	// Update Locomotion
-}
-
-bool 
-Agent::nextLocation()
-{
-	return true;
-}
-
-void 
-Agent::updateLocomote(Ogre::Real deltaTime)
-{
+	Ogre::Quaternion q(Ogre::Degree(r), Ogre::Vector3::UNIT_Y);	//set up Quaternion
+	mBodyNode->setOrientation(q);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -90,14 +69,14 @@ void
 Agent::fire(Ogre::Real vx, Ogre::Real vy, Ogre::Real vz, Ogre::Real speed)
 {
 	projectile = true; // turns on the movement, which will call shoot
-	//initPos = mBodyNode->getPosition();	//start of the shot
 	// set up the initial state
 	vel.x = vx;
 	vel.y = vy;
 	vel.z = vz;
 	gravity.x = 0;
-	gravity.y = -9.81;
-	gravity.z = -speed;	// bit of a hack, but should create the illusion
+	gravity.y = Ogre::Real(-9.81);
+	gravity.z = 0;
+	this->speed = speed;
 	ps->setVisible(true);
 	this->mBodyNode->yaw(Ogre::Degree(180));
 	this->mBodyNode->pitch(Ogre::Degree(45));
@@ -115,17 +94,15 @@ Agent::shoot(Ogre::Real deltaTime) // lecture 12 call for every frame of the ani
 	using namespace Ogre;
 
 	Vector3 pos = this->mBodyNode->getPosition();
-	vel = vel + (1*gravity * deltaTime);
-	pos = pos + (vel * deltaTime); // velocity
-	pos = pos + 0.5 * 1*gravity * deltaTime * deltaTime; // acceleration
+	vel = vel + (mass*gravity * deltaTime);
+	pos = pos + (vel * speed * deltaTime); // velocity
+	pos = pos + 0.5 * mass*gravity * deltaTime * deltaTime; // acceleration
 
 	this->mBodyNode->setPosition(pos);
+	this->mBodyNode->pitch(Ogre::Degree(20));
 
 	Ogre::AxisAlignedBox objBox = this->mBodyEntity->getWorldBoundingBox();
 	objBox.intersects(objBox);
-
-	//check for collision here? or in the GameApp?
-	// ???
 
 	if (this->mBodyNode->getPosition().y <= -0.5) // if it get close to the ground, stop
 	{
@@ -133,6 +110,9 @@ Agent::shoot(Ogre::Real deltaTime) // lecture 12 call for every frame of the ani
 	}
 }
 
+///////////////////////////////////////////////////////////////
+// reset the agent to starting position
+// ready to fire again!
 void
 Agent::reload()
 {
@@ -143,6 +123,8 @@ Agent::reload()
 	this->mBodyNode->setPosition(initPos);
 }
 
+///////////////////////////////////////////////////////////////
+// collides with any other bounding boxes?
 bool
 Agent::intersects(Ogre::Entity* e)
 {
@@ -152,4 +134,13 @@ Agent::intersects(Ogre::Entity* e)
 	Ogre::AxisAlignedBox eBox = e->getWorldBoundingBox();
 
 	return mBox.intersects(eBox);
+}
+
+////////////////////////////////////////////////////////////////
+// update is called at every frame from GameApplication::addTime
+void
+Agent::update(Ogre::Real deltaTime) 
+{
+	if (projectile) // Lecture 12
+		shoot(deltaTime);
 }

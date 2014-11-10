@@ -4,16 +4,27 @@
 #include "BaseApplication.h"
 #include "Agent.h"
 
+#define MAXSHOTS 21
+
+//foward declarations
+class Grid;
+class GridNode;
+/////////////////////
+
 class GameApplication : public BaseApplication
 {
 private:
-	Agent* agent;			// store a pointer to the character
-	Ogre::Entity* target;	//pointer to target barrel
+	Agent* agent;				// store a pointer to the character
+	Ogre::Entity* target;		//pointer to target barrel
 	std::list<Agent*> agentList; // Lecture 5: now a list of agents
 	Ogre::Vector3 launchVector;	// determines trajectory
-	Ogre::Real speed;	//speed of agent shot
-	int shots_fired;	//number of fish fired
-	int score;			//score from hitting barrels with fish
+	Ogre::Real speed;			//speed of agent shot
+	int shots_fired;			//number of fish fired
+	int score;					//score from hitting barrels with fish
+	int number_targets;			//number of barrels to hit
+	Grid* grid;					//just using the same name to save refactoring time
+	std::vector<Ogre::Entity*> targetList; //list of target barrels
+
 public:
     GameApplication(void);
     virtual ~GameApplication(void);
@@ -22,6 +33,7 @@ public:
 	void setupEnv();		// Set up the lights, shadows, etc
 	void loadObjects();		// Load other props or objects (e.g. furniture)
 	void loadCharacters();	// Load actors, agents, characters
+	void resetGame();		// reset agent, level, and targets
 
 	void addTime(Ogre::Real deltaTime);		// update the game state
 

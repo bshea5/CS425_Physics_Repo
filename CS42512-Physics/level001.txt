@@ -9,8 +9,12 @@ Characters
 f fish.mesh 0.0 0.75
 
 World
-koooooooooooooo
+oooooodoooooooo
+ooodooooooodooo
+oooooodoooooooo
 ooooooooooooooo
+oodoooooooooooo
+oooooooooodoooo
 oooooodoooooooo
 ooooooooooooooo
 ooooooooooooooo
@@ -23,10 +27,6 @@ ooooooooooooooo
 ooooooooooooooo
 ooooooooooooooo
 ooooooooooooooo
-ooooooooooooooo
-ooooooooooooooo
-ooooooooooooooo
-ooooooooooooooo
-oooooofoooooooo
+ooookofokoooooo
 ooooooooooooooo
 
